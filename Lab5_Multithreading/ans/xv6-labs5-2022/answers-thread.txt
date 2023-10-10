@@ -1,0 +1,13 @@
+为什么两个线程会丢失 keys，但是一个线程不会？确定一种两个线程的执行序列，可以使得 key 丢失。
+insert()函数是一个简单的插入链表头部，且对函数参数e和p进行了全局的修改，那么考虑如下情形：假设两个线程的桶号一致，insert时它们的key被插入到同一个桶，当insert()函数如下执行时：
+  struct entry *e = malloc(sizeof(struct entry));    // t1
+  e->key = key;                                      // t1
+  e->value = value;                                  // t1
+  e->next = n;                                       // t1
+  struct entry *e = malloc(sizeof(struct entry));    // t2
+  e->key = key;                                      // t2
+  e->value = value;                                  // t2
+  e->next = n;                                       // t2
+  *p = e;                                            // t2
+  *p = e;                                            // t1
+可以看到，线程1的表项被遗弃，在这个桶上只插入了线程2的表项，从而丢失了key。

@@ -1,0 +1,14 @@
+获取源码:
+git clone git://g.csail.mit.edu/xv6-labs-2022
+然后通过
+git fetch
+git checkout ...(这里填入需要的分支，如git checkout traps)
+make clean
+将代码源文件复制到虚拟机后，用命令行在目录下执行bear make qemu生成compile_commands.json，
+再自动基于vscode配置到.vscode中。
+关于VScode Debug，可参考https://zhuanlan.zhihu.com/p/501901665
+如果需要调试内核，launch.json中program改成kernel/kernel
+如果调试用户程序，launch.json中program改成user/_${program}
+其中program是需要调试的c文件的名字。如调试alarmtest，改成user/_alarmtest
+如果用gdb调试，先gdb-multiarch kernel/kernel
+再file user/_${program}即可。打断点就b ${行号}，比如第10行就是b 10

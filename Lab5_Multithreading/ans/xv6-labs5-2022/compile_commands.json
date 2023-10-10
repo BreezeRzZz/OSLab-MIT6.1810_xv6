@@ -1,0 +1,18 @@
+[
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-g",
+            "-O2",
+            "-DSOL_THREAD",
+            "-DLAB_THREAD",
+            "-pthread",
+            "-o",
+            "barrier",
+            "notxv6/barrier.c"
+        ],
+        "directory": "/home/breezer/xv6-labs5-2022",
+        "file": "notxv6/barrier.c"
+    }
+]

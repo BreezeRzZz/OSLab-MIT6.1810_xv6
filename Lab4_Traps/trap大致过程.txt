@@ -1,0 +1,31 @@
+当需要trap(syscall)时，硬件完成：
+1.关（设备）中断
+2.复制pc到sepc
+3.当前模式复制到sstatus的SPP bit
+4.设置scause为当前trap的原因
+5.设置模式为supervisor(kernel)
+6.复制stvec到pc（下一条指令是trap处理程序）
+7.从新的pc值开始执行
+对于用户trap来说，路径为uservec→usertrap→usertrapret→userret
+trampoline page包含了uservec，被映射到每个进程页表和内核页表最尾端的虚拟地址。
+由于有相同的虚拟地址，trap handler就能在切换到内核页表后继续执行。
+uservec：32个寄存器需要被保存。在进入用户空间前，内核设置sscratch指向每个进程的trapframe结构，
+而trapframe有空间保存32个寄存器。trapframe被映射到用户地址空间中trampoline下面一页。
+进程的p->trapframe保存trapframe的物理地址，所以内核也能使用它。
+利用csrrw指令交换a0和sscratch寄存器的值，a0现在保存trapframe的地址，sscratch保存a0的值，
+现在uservec就将所有用户寄存器的值保存下来了。
+trapframe包含了当前进程内核栈的地址，当前CPU的hartID，usertrap函数的地址，以及内核页表的地址。
+uservec获取这些值，将satp指向内核页表，调用usertrap。
+usertrap：功能是确定trap原因，处理并返回。
+首先它改变stevec到kernelvec，这样在内核中的trap会调用kernelvec。
+然后保存sepc，因为usertrap可能调用yield切换到其他进程的内核线程，这个进程可能回到用户空间且修改sepc。
+分类型处理...
+然后是返回到用户空间。首先调用usertrapret，这个函数设置一些控制寄存器为未来用户空间的trap做准备，
+这包括了将stevc指向uservec，准备uservec依赖的trapframe内容，设置sepc为先前保存的用户pc。
+最后usertrapret在trampoline上调用userret，因为userret会修改页表。
+usertrapret调用userret时，将trapframe的地址保存在a0中，
+指向当前用户页表的指针保存在a1中。userret修改satp指向用户页表。
+userret复制保存trapframe的a0寄存器到sscratch。
+从此刻起，userret只能使用寄存器内容和trapframe的内容。
+然后，userret从恢复trapframe中保存的用户寄存器，最后交换a0和sscratch，恢复a0并保存trapframe为下次trap做准备。
+最后调用sret回到用户空间。
